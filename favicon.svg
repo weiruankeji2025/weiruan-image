@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- 网络球体图标 -->
+  <g fill="none" stroke="#1a1a1a" stroke-width="2">
+    <!-- 外圈 -->
+    <ellipse cx="50" cy="30" rx="20" ry="20"/>
+    <!-- 横向椭圆 -->
+    <ellipse cx="50" cy="30" rx="20" ry="8"/>
+    <!-- 纵向椭圆 -->
+    <ellipse cx="50" cy="30" rx="8" ry="20"/>
+    <!-- 节点 -->
+    <circle cx="50" cy="10" r="3" fill="#1a1a1a"/>
+    <circle cx="50" cy="50" r="3" fill="#1a1a1a"/>
+    <circle cx="30" cy="30" r="3" fill="#1a1a1a"/>
+    <circle cx="70" cy="30" r="3" fill="#1a1a1a"/>
+    <circle cx="35" cy="18" r="2.5" fill="#1a1a1a"/>
+    <circle cx="65" cy="18" r="2.5" fill="#1a1a1a"/>
+    <circle cx="35" cy="42" r="2.5" fill="#1a1a1a"/>
+    <circle cx="65" cy="42" r="2.5" fill="#1a1a1a"/>
+    <circle cx="42" cy="24" r="2" fill="#1a1a1a"/>
+    <circle cx="58" cy="24" r="2" fill="#1a1a1a"/>
+    <circle cx="42" cy="36" r="2" fill="#1a1a1a"/>
+    <circle cx="58" cy="36" r="2" fill="#1a1a1a"/>
+  </g>
+
+  <!-- WR 字母 -->
+  <g fill="#1a1a1a">
+    <!-- W -->
+    <path d="M8 60 L14 90 L22 72 L30 90 L36 60 L32 60 L28 80 L22 65 L16 80 L12 60 Z"/>
+    <!-- R -->
+    <path d="M42 60 L42 90 L46 90 L46 78 L52 78 L58 90 L63 90 L56 77 C60 75 62 72 62 68 C62 63 58 60 52 60 Z M46 64 L52 64 C56 64 58 66 58 68 C58 71 56 73 52 73 L46 73 Z"/>
+  </g>
+</svg>
