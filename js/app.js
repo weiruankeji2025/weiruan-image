@@ -1,10 +1,9 @@
 /**
- * 图床工具 - 核心逻辑
- * 基于 GitHub API + jsDelivr CDN
+ * 图床工具 - 主应用逻辑
+ * 支持多云存储: GitHub, Google Drive, OneDrive, Dropbox
  */
 
-// 配置存储键
-const CONFIG_KEY = 'image-hosting-config';
+// 历史记录存储键
 const HISTORY_KEY = 'image-hosting-history';
 
 // DOM 元素
@@ -16,78 +15,63 @@ const progressText = document.getElementById('progressText');
 const resultSection = document.getElementById('resultSection');
 const historyList = document.getElementById('historyList');
 const toast = document.getElementById('toast');
+const configSection = document.getElementById('configSection');
+const configTitle = document.getElementById('configTitle');
 const configBody = document.getElementById('configBody');
-const configToggle = document.getElementById('configToggle');
+const cdnLinkItem = document.getElementById('cdnLinkItem');
 
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
-    loadConfig();
+    storageManager.init();
     loadHistory();
     initUploadEvents();
+    initStorageCardEvents();
 });
 
 /**
- * 加载配置
+ * 初始化存储卡片事件
  */
-function loadConfig() {
-    const config = getConfig();
-    if (config) {
-        document.getElementById('githubToken').value = config.token || '';
-        document.getElementById('repoOwner').value = config.owner || '';
-        document.getElementById('repoName').value = config.repo || 'weiruan-image';
-        document.getElementById('branch').value = config.branch || 'main';
-        document.getElementById('path').value = config.path || 'images';
-
-        // 如果没有配置，展开配置面板
-        if (!config.token || !config.owner) {
-            configBody.classList.add('show');
-            configToggle.classList.add('rotated');
-        }
-    } else {
-        configBody.classList.add('show');
-        configToggle.classList.add('rotated');
-    }
+function initStorageCardEvents() {
+    document.querySelectorAll('.storage-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const storageName = card.dataset.storage;
+            openConfigPanel(storageName);
+        });
+    });
 }
 
 /**
- * 获取配置
+ * 打开配置面板
  */
-function getConfig() {
-    const configStr = localStorage.getItem(CONFIG_KEY);
-    return configStr ? JSON.parse(configStr) : null;
-}
+function openConfigPanel(storageName) {
+    const provider = storageManager.providers[storageName];
+    if (!provider) return;
 
-/**
- * 保存配置
- */
-function saveConfig() {
-    const config = {
-        token: document.getElementById('githubToken').value.trim(),
-        owner: document.getElementById('repoOwner').value.trim(),
-        repo: document.getElementById('repoName').value.trim() || 'weiruan-image',
-        branch: document.getElementById('branch').value.trim() || 'main',
-        path: document.getElementById('path').value.trim() || 'images'
+    // 设置当前提供商
+    storageManager.setCurrentProvider(storageName);
+    storageManager.updateStorageStatus();
+
+    // 更新配置面板内容
+    const iconMap = {
+        github: '🐙',
+        googledrive: '📁',
+        onedrive: '☁️',
+        dropbox: '📦'
     };
 
-    if (!config.token || !config.owner) {
-        showToast('请填写 GitHub Token 和用户名', 'error');
-        return;
-    }
+    configTitle.textContent = `${iconMap[storageName] || '⚙️'} 配置 ${provider.displayName}`;
+    configBody.innerHTML = provider.getConfigFormHTML();
+    configSection.style.display = 'block';
 
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
-    showToast('配置已保存', 'success');
-
-    // 收起配置面板
-    configBody.classList.remove('show');
-    configToggle.classList.remove('rotated');
+    // 滚动到配置面板
+    configSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /**
- * 切换配置面板
+ * 关闭配置面板
  */
-function toggleConfig() {
-    configBody.classList.toggle('show');
-    configToggle.classList.toggle('rotated');
+function closeConfig() {
+    configSection.style.display = 'none';
 }
 
 /**
@@ -100,6 +84,7 @@ function initUploadEvents() {
     // 文件选择
     fileInput.addEventListener('change', (e) => {
         handleFiles(e.target.files);
+        fileInput.value = ''; // 重置以允许选择相同文件
     });
 
     // 拖拽上传
@@ -136,10 +121,11 @@ function initUploadEvents() {
  * 处理文件
  */
 async function handleFiles(files) {
-    const config = getConfig();
-    if (!config || !config.token || !config.owner) {
-        showToast('请先配置 GitHub Token 和用户名', 'error');
-        toggleConfig();
+    const provider = storageManager.getCurrentProvider();
+
+    if (!provider.isConnected()) {
+        showToast(`请先配置 ${provider.displayName}`, 'error');
+        openConfigPanel(storageManager.currentProvider);
         return;
     }
 
@@ -149,71 +135,32 @@ async function handleFiles(files) {
             continue;
         }
 
-        await uploadFile(file, config);
+        await uploadFile(file);
     }
 }
 
 /**
- * 上传文件到 GitHub
+ * 上传文件
  */
-async function uploadFile(file, config) {
+async function uploadFile(file) {
     showProgress(true);
     updateProgress(0, '准备上传...');
 
     try {
-        // 读取文件为 Base64
-        updateProgress(20, '读取文件...');
-        const base64 = await fileToBase64(file);
-
-        // 生成文件名
-        const timestamp = Date.now();
-        const randomStr = Math.random().toString(36).substring(2, 8);
-        const ext = file.name.split('.').pop() || 'png';
-        const fileName = `${timestamp}_${randomStr}.${ext}`;
-        const filePath = `${config.path}/${fileName}`;
-
-        updateProgress(40, '上传到 GitHub...');
-
-        // 调用 GitHub API
-        const response = await fetch(
-            `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${filePath}`,
-            {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `token ${config.token}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/vnd.github.v3+json'
-                },
-                body: JSON.stringify({
-                    message: `Upload image: ${fileName}`,
-                    content: base64,
-                    branch: config.branch
-                })
-            }
-        );
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || '上传失败');
-        }
-
-        updateProgress(80, '生成链接...');
-
-        const result = await response.json();
-
-        // 生成各种链接
-        const links = generateLinks(config, filePath, fileName);
+        const result = await storageManager.upload(file, (percent, text) => {
+            updateProgress(percent, text);
+        });
 
         updateProgress(100, '上传成功!');
 
         // 显示结果
-        showResult(links);
+        showResult(result);
 
         // 保存历史
         saveHistory({
-            name: fileName,
-            path: filePath,
-            links: links,
+            name: result.fileName,
+            links: result,
+            storage: result.storage,
             time: new Date().toLocaleString()
         });
 
@@ -225,38 +172,6 @@ async function uploadFile(file, config) {
     } finally {
         setTimeout(() => showProgress(false), 1000);
     }
-}
-
-/**
- * 文件转 Base64
- */
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            const base64 = reader.result.split(',')[1];
-            resolve(base64);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-/**
- * 生成各种链接
- */
-function generateLinks(config, filePath, fileName) {
-    const rawUrl = `https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch}/${filePath}`;
-    const cdnUrl = `https://cdn.jsdelivr.net/gh/${config.owner}/${config.repo}@${config.branch}/${filePath}`;
-    const githubUrl = `https://github.com/${config.owner}/${config.repo}/blob/${config.branch}/${filePath}`;
-
-    return {
-        markdown: `![${fileName}](${cdnUrl})`,
-        html: `<img src="${cdnUrl}" alt="${fileName}">`,
-        direct: rawUrl,
-        cdn: cdnUrl,
-        github: githubUrl
-    };
 }
 
 /**
@@ -278,13 +193,21 @@ function updateProgress(percent, text) {
 /**
  * 显示结果
  */
-function showResult(links) {
+function showResult(result) {
     resultSection.style.display = 'block';
-    document.getElementById('markdownLink').value = links.markdown;
-    document.getElementById('htmlLink').value = links.html;
-    document.getElementById('directLink').value = links.direct;
-    document.getElementById('cdnLink').value = links.cdn;
-    document.getElementById('previewImage').src = links.cdn;
+    document.getElementById('markdownLink').value = result.markdown;
+    document.getElementById('htmlLink').value = result.html;
+    document.getElementById('directLink').value = result.direct;
+
+    // CDN 链接只对 GitHub 显示
+    if (result.cdn) {
+        cdnLinkItem.style.display = 'block';
+        document.getElementById('cdnLink').value = result.cdn;
+        document.getElementById('previewImage').src = result.cdn;
+    } else {
+        cdnLinkItem.style.display = 'none';
+        document.getElementById('previewImage').src = result.direct;
+    }
 
     // 滚动到结果区域
     resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -296,13 +219,12 @@ function showResult(links) {
 function copyLink(inputId) {
     const input = document.getElementById(inputId);
     input.select();
-    document.execCommand('copy');
 
-    // 使用现代 API
     navigator.clipboard.writeText(input.value).then(() => {
         showToast('已复制到剪贴板', 'success');
     }).catch(() => {
-        // 回退到 execCommand
+        // 回退方案
+        document.execCommand('copy');
         showToast('已复制到剪贴板', 'success');
     });
 }
@@ -320,14 +242,6 @@ function showToast(message, type = '') {
 }
 
 /**
- * 加载历史记录
- */
-function loadHistory() {
-    const history = getHistory();
-    renderHistory(history);
-}
-
-/**
  * 获取历史记录
  */
 function getHistory() {
@@ -342,12 +256,20 @@ function saveHistory(item) {
     const history = getHistory();
     history.unshift(item);
 
-    // 只保留最近 50 条
-    if (history.length > 50) {
+    // 只保留最近 100 条
+    if (history.length > 100) {
         history.pop();
     }
 
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    renderHistory(history);
+}
+
+/**
+ * 加载历史记录
+ */
+function loadHistory() {
+    const history = getHistory();
     renderHistory(history);
 }
 
@@ -360,19 +282,25 @@ function renderHistory(history) {
         return;
     }
 
-    historyList.innerHTML = history.map((item, index) => `
-        <div class="history-item">
-            <img src="${item.links.cdn}" alt="${item.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖼️</text></svg>'">
-            <div class="history-info">
-                <div class="history-name">${item.name}</div>
-                <div class="history-time">${item.time}</div>
+    historyList.innerHTML = history.map((item, index) => {
+        const previewUrl = item.links.cdn || item.links.direct;
+        return `
+            <div class="history-item">
+                <img src="${previewUrl}" alt="${item.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖼️</text></svg>'">
+                <div class="history-info">
+                    <div class="history-name">${item.name}</div>
+                    <div class="history-meta">
+                        <span class="history-time">${item.time}</span>
+                        <span class="history-storage">${item.storage || 'GitHub'}</span>
+                    </div>
+                </div>
+                <div class="history-actions">
+                    <button class="btn btn-copy" onclick="copyHistoryLink(${index}, 'markdown')">MD</button>
+                    <button class="btn btn-copy" onclick="copyHistoryLink(${index}, 'direct')">链接</button>
+                </div>
             </div>
-            <div class="history-actions">
-                <button class="btn btn-copy" onclick="copyHistoryLink(${index}, 'markdown')">MD</button>
-                <button class="btn btn-copy" onclick="copyHistoryLink(${index}, 'cdn')">链接</button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 /**
