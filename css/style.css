@@ -14,6 +14,12 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
     --radius: 12px;
     --transition: all 0.3s ease;
+
+    /* 品牌颜色 */
+    --github-color: #24292e;
+    --google-color: #4285f4;
+    --onedrive-color: #0078d4;
+    --dropbox-color: #0061ff;
 }
 
 * {
@@ -31,7 +37,7 @@ body {
 }
 
 .container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -57,6 +63,115 @@ body {
     font-size: 1.1rem;
 }
 
+/* 存储选择区域 */
+.storage-section {
+    margin-bottom: 24px;
+}
+
+.storage-section h2 {
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+}
+
+.storage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.storage-card {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+}
+
+.storage-card:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.storage-card.active {
+    border-color: var(--success-color);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.1));
+}
+
+.storage-card.connected {
+    border-color: var(--success-color);
+}
+
+.storage-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--github-color);
+    color: white;
+    border-radius: 12px;
+    padding: 10px;
+}
+
+.storage-icon.google {
+    background: var(--google-color);
+}
+
+.storage-icon.onedrive {
+    background: var(--onedrive-color);
+}
+
+.storage-icon.dropbox {
+    background: var(--dropbox-color);
+}
+
+.storage-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.storage-info h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.storage-info p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.storage-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border-color);
+}
+
+.storage-card.connected .status-dot {
+    background: var(--success-color);
+}
+
+.storage-card.connected .status-text {
+    color: var(--success-color);
+}
+
 /* 配置区域 */
 .config-section {
     background: var(--card-bg);
@@ -71,31 +186,102 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    cursor: pointer;
     background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
     font-weight: 600;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    border-radius: 4px;
     transition: var(--transition);
 }
 
-.config-header:hover {
-    background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
-}
-
-.toggle-icon {
-    transition: transform 0.3s ease;
-}
-
-.toggle-icon.rotated {
-    transform: rotate(180deg);
+.btn-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--text-color);
 }
 
 .config-body {
     padding: 20px;
-    display: none;
 }
 
-.config-body.show {
-    display: block;
+/* OAuth 按钮 */
+.oauth-section {
+    text-align: center;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+.oauth-section p {
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+}
+
+.btn-oauth {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    color: white;
+}
+
+.btn-oauth.github {
+    background: var(--github-color);
+}
+
+.btn-oauth.google {
+    background: var(--google-color);
+}
+
+.btn-oauth.onedrive {
+    background: var(--onedrive-color);
+}
+
+.btn-oauth.dropbox {
+    background: var(--dropbox-color);
+}
+
+.btn-oauth:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    opacity: 0.9;
+}
+
+.btn-oauth svg {
+    width: 20px;
+    height: 20px;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+
+.divider span {
+    padding: 0 16px;
 }
 
 .form-group {
@@ -140,6 +326,12 @@ body {
     text-decoration: underline;
 }
 
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
 /* 按钮 */
 .btn {
     display: inline-flex;
@@ -162,6 +354,15 @@ body {
 .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary {
+    background: var(--border-color);
+    color: var(--text-color);
+}
+
+.btn-secondary:hover {
+    background: #cbd5e1;
 }
 
 .btn-copy {
@@ -187,6 +388,12 @@ body {
 .btn-small {
     padding: 6px 12px;
     font-size: 0.85rem;
+}
+
+.btn-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
 }
 
 /* 上传区域 */
@@ -378,8 +585,22 @@ body {
     margin-bottom: 4px;
 }
 
+.history-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .history-time {
     font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.history-storage {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--border-color);
     color: var(--text-secondary);
 }
 
@@ -440,6 +661,52 @@ body {
     background: var(--danger-color);
 }
 
+/* 用户信息 */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.user-details {
+    flex: 1;
+}
+
+.user-name {
+    font-weight: 600;
+}
+
+.user-email {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.btn-disconnect {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    background: transparent;
+    border: 1px solid var(--danger-color);
+    color: var(--danger-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-disconnect:hover {
+    background: var(--danger-color);
+    color: white;
+}
+
 /* 响应式 */
 @media (max-width: 640px) {
     .container {
@@ -448,6 +715,19 @@ body {
 
     .header h1 {
         font-size: 2rem;
+    }
+
+    .storage-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .storage-card {
+        padding: 16px;
+    }
+
+    .storage-icon {
+        width: 40px;
+        height: 40px;
     }
 
     .upload-area {
@@ -477,6 +757,10 @@ body {
 
     .history-actions button {
         flex: 1;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -528,5 +812,9 @@ body {
 
     .history-item:hover {
         background: #1e293b;
+    }
+
+    .storage-card {
+        background: var(--card-bg);
     }
 }

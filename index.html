@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图床工具 - 快速上传图片</title>
+    <title>图床工具 - 多云存储图片上传</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖼️</text></svg>">
 </head>
@@ -12,38 +12,83 @@
         <!-- 头部 -->
         <header class="header">
             <h1>🖼️ 图床工具</h1>
-            <p class="subtitle">快速上传，一键复制 Markdown 链接</p>
+            <p class="subtitle">多云存储 · 快速上传 · 一键复制 Markdown</p>
         </header>
 
-        <!-- 配置区域 -->
-        <section class="config-section">
-            <div class="config-header" onclick="toggleConfig()">
-                <span>⚙️ 配置 GitHub Token</span>
-                <span class="toggle-icon" id="configToggle">▼</span>
+        <!-- 存储选择 -->
+        <section class="storage-section">
+            <h2>选择存储服务</h2>
+            <div class="storage-grid">
+                <!-- GitHub -->
+                <div class="storage-card" data-storage="github">
+                    <div class="storage-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    </div>
+                    <div class="storage-info">
+                        <h3>GitHub</h3>
+                        <p>免费 · jsDelivr CDN 加速</p>
+                    </div>
+                    <div class="storage-status" id="github-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">未连接</span>
+                    </div>
+                </div>
+
+                <!-- Google Drive -->
+                <div class="storage-card" data-storage="googledrive">
+                    <div class="storage-icon google">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.433 22l-1.566-2.7 7.134-12.3h3.132l-7.134 12.3zm10.567-17h-6l7.5 13 1.5-2.6zm-3.5 6l-3.5 6h14l-3.5-6z"/></svg>
+                    </div>
+                    <div class="storage-info">
+                        <h3>Google Drive</h3>
+                        <p>15GB 免费 · 全球访问</p>
+                    </div>
+                    <div class="storage-status" id="googledrive-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">未连接</span>
+                    </div>
+                </div>
+
+                <!-- OneDrive -->
+                <div class="storage-card" data-storage="onedrive">
+                    <div class="storage-icon onedrive">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.5 18.5h8.25c2.9 0 5.25-2.35 5.25-5.25s-2.35-5.25-5.25-5.25c-.17 0-.33.01-.5.02C17.55 5.69 15.22 4 12.5 4c-3.04 0-5.5 2.46-5.5 5.5 0 .28.02.55.06.82C4.22 10.85 2 13.37 2 16.5c0 3.31 2.69 6 6 6h2.5v-4z"/></svg>
+                    </div>
+                    <div class="storage-info">
+                        <h3>OneDrive</h3>
+                        <p>5GB 免费 · 微软生态</p>
+                    </div>
+                    <div class="storage-status" id="onedrive-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">未连接</span>
+                    </div>
+                </div>
+
+                <!-- Dropbox -->
+                <div class="storage-card" data-storage="dropbox">
+                    <div class="storage-icon dropbox">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2l6 3.75L6 9.5 0 5.75zm12 0l6 3.75-6 3.75-6-3.75zM0 13.25L6 9.5l6 3.75-6 3.75zm12 0l6-3.75 6 3.75-6 3.75zm-6 7.5l6-3.75 6 3.75-6 3.75z"/></svg>
+                    </div>
+                    <div class="storage-info">
+                        <h3>Dropbox</h3>
+                        <p>2GB 免费 · 稳定可靠</p>
+                    </div>
+                    <div class="storage-status" id="dropbox-status">
+                        <span class="status-dot"></span>
+                        <span class="status-text">未连接</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 配置面板 (动态内容) -->
+        <section class="config-section" id="configSection" style="display: none;">
+            <div class="config-header">
+                <span id="configTitle">⚙️ 配置</span>
+                <button class="btn-close" onclick="closeConfig()">✕</button>
             </div>
             <div class="config-body" id="configBody">
-                <div class="form-group">
-                    <label for="githubToken">GitHub Personal Access Token</label>
-                    <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx">
-                    <small>需要 repo 权限，<a href="https://github.com/settings/tokens/new" target="_blank">点击获取 Token</a></small>
-                </div>
-                <div class="form-group">
-                    <label for="repoOwner">仓库所有者</label>
-                    <input type="text" id="repoOwner" placeholder="你的 GitHub 用户名">
-                </div>
-                <div class="form-group">
-                    <label for="repoName">仓库名称</label>
-                    <input type="text" id="repoName" placeholder="仓库名称" value="weiruan-image">
-                </div>
-                <div class="form-group">
-                    <label for="branch">分支</label>
-                    <input type="text" id="branch" placeholder="main" value="main">
-                </div>
-                <div class="form-group">
-                    <label for="path">存储路径</label>
-                    <input type="text" id="path" placeholder="images" value="images">
-                </div>
-                <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
+                <!-- 动态填充 -->
             </div>
         </section>
 
@@ -87,7 +132,7 @@
                     <button class="btn btn-copy" onclick="copyLink('directLink')">复制</button>
                 </div>
             </div>
-            <div class="result-item">
+            <div class="result-item" id="cdnLinkItem">
                 <label>jsDelivr CDN</label>
                 <div class="result-input-group">
                     <input type="text" id="cdnLink" readonly>
@@ -112,13 +157,15 @@
 
         <!-- 页脚 -->
         <footer class="footer">
-            <p>基于 GitHub + jsDelivr CDN 构建 | <a href="https://github.com/weiruankeji2025/weiruan-image" target="_blank">GitHub</a></p>
+            <p>支持 GitHub · Google Drive · OneDrive · Dropbox</p>
         </footer>
     </div>
 
     <!-- 提示消息 -->
     <div class="toast" id="toast"></div>
 
+    <!-- OAuth 回调处理 -->
+    <script src="js/storage-providers.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
