@@ -180,8 +180,17 @@ class GitHubProvider extends StorageProvider {
         );
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || '上传失败');
+            let errorMessage = '上传失败';
+            try {
+                const errorText = await response.text();
+                // 尝试解析为 JSON
+                const error = JSON.parse(errorText);
+                errorMessage = error.message || errorMessage;
+            } catch (e) {
+                // 如果不是 JSON，使用 HTTP 状态信息
+                errorMessage = `上传失败 (${response.status}: ${response.statusText})`;
+            }
+            throw new Error(errorMessage);
         }
 
         onProgress?.(80, '生成链接...');
@@ -315,8 +324,14 @@ class GoogleDriveProvider extends StorageProvider {
         );
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || '上传失败');
+            let errorMessage = '上传失败';
+            try {
+                const error = await response.json();
+                errorMessage = error.error?.message || errorMessage;
+            } catch (e) {
+                errorMessage = `上传失败 (${response.status}: ${response.statusText})`;
+            }
+            throw new Error(errorMessage);
         }
 
         const result = await response.json();
@@ -441,8 +456,14 @@ class OneDriveProvider extends StorageProvider {
         );
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || '上传失败');
+            let errorMessage = '上传失败';
+            try {
+                const error = await response.json();
+                errorMessage = error.error?.message || errorMessage;
+            } catch (e) {
+                errorMessage = `上传失败 (${response.status}: ${response.statusText})`;
+            }
+            throw new Error(errorMessage);
         }
 
         const result = await response.json();
@@ -579,8 +600,14 @@ class DropboxProvider extends StorageProvider {
         );
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error_summary || '上传失败');
+            let errorMessage = '上传失败';
+            try {
+                const error = await response.json();
+                errorMessage = error.error_summary || errorMessage;
+            } catch (e) {
+                errorMessage = `上传失败 (${response.status}: ${response.statusText})`;
+            }
+            throw new Error(errorMessage);
         }
 
         const result = await response.json();
