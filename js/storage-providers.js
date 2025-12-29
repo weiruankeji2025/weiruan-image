@@ -137,14 +137,83 @@ class GitHubProvider extends StorageProvider {
                     <input type="text" id="github-branch" value="${config.branch || 'main'}" placeholder="main">
                 </div>
             </div>
-            <button class="btn btn-primary" onclick="storageManager.saveGitHubConfig()">保存配置</button>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="storageManager.saveGitHubConfig()">保存配置</button>
+                <button class="btn btn-secondary" onclick="storageManager.testGitHubConnection()">测试连接</button>
+            </div>
         `;
+    }
+
+    // 测试 GitHub 连接
+    async testConnection() {
+        const config = this.getConfig();
+        if (!config.token || !config.owner || !config.repo) {
+            return { success: false, message: '请先填写完整配置' };
+        }
+
+        try {
+            const response = await fetch(
+                `https://api.github.com/repos/${config.owner}/${config.repo}`,
+                {
+                    headers: {
+                        'Authorization': `token ${config.token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                }
+            );
+
+            if (response.ok) {
+                const repo = await response.json();
+                return {
+                    success: true,
+                    message: `连接成功! 仓库: ${repo.full_name}，默认分支: ${repo.default_branch}`
+                };
+            } else if (response.status === 404) {
+                return { success: false, message: '仓库不存在，请检查用户名和仓库名' };
+            } else if (response.status === 401) {
+                return { success: false, message: 'Token 无效或已过期' };
+            } else if (response.status === 403) {
+                return { success: false, message: 'Token 权限不足，请确保有 repo 权限' };
+            } else {
+                return { success: false, message: `连接失败 (${response.status})` };
+            }
+        } catch (e) {
+            return { success: false, message: `网络错误: ${e.message}` };
+        }
     }
 
     async upload(file, onProgress) {
         const config = this.getConfig();
         if (!config.token || !config.owner || !config.repo) {
             throw new Error('请先配置 GitHub');
+        }
+
+        onProgress?.(10, '验证仓库...');
+
+        // 先验证仓库是否存在
+        try {
+            const repoCheck = await fetch(
+                `https://api.github.com/repos/${config.owner}/${config.repo}`,
+                {
+                    headers: {
+                        'Authorization': `token ${config.token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                }
+            );
+            if (!repoCheck.ok) {
+                if (repoCheck.status === 404) {
+                    throw new Error(`仓库 ${config.owner}/${config.repo} 不存在，请检查配置`);
+                } else if (repoCheck.status === 401) {
+                    throw new Error('Token 无效或已过期');
+                }
+            }
+        } catch (e) {
+            if (e.message.includes('仓库') || e.message.includes('Token')) {
+                throw e;
+            }
+            // 网络错误时继续尝试上传
+            console.warn('仓库验证失败，继续尝试上传:', e);
         }
 
         onProgress?.(20, '读取文件...');
@@ -183,12 +252,25 @@ class GitHubProvider extends StorageProvider {
             let errorMessage = '上传失败';
             try {
                 const errorText = await response.text();
+                console.error('GitHub API Error:', response.status, errorText);
                 // 尝试解析为 JSON
                 const error = JSON.parse(errorText);
-                errorMessage = error.message || errorMessage;
+                errorMessage = error.message || `错误代码: ${response.status}`;
             } catch (e) {
                 // 如果不是 JSON，使用 HTTP 状态信息
-                errorMessage = `上传失败 (${response.status}: ${response.statusText})`;
+                if (response.status === 400) {
+                    errorMessage = '请求无效，请检查仓库名称和分支是否正确';
+                } else if (response.status === 401) {
+                    errorMessage = 'Token 无效或已过期，请重新配置';
+                } else if (response.status === 403) {
+                    errorMessage = '没有权限，请确保 Token 有 repo 权限';
+                } else if (response.status === 404) {
+                    errorMessage = '仓库不存在，请检查用户名和仓库名';
+                } else if (response.status === 422) {
+                    errorMessage = '文件已存在或路径无效';
+                } else {
+                    errorMessage = `上传失败 (错误代码: ${response.status})`;
+                }
             }
             throw new Error(errorMessage);
         }
@@ -771,6 +853,48 @@ class StorageManager {
 
         this.providers.github.saveConfig({ ...config, path, branch });
         showToast('设置已保存', 'success');
+    }
+
+    // 测试 GitHub 连接
+    async testGitHubConnection() {
+        // 先临时保存当前输入的配置
+        const token = document.getElementById('github-token')?.value.trim();
+        const owner = document.getElementById('github-owner')?.value.trim();
+        const repo = document.getElementById('github-repo')?.value.trim();
+
+        if (!token || !owner || !repo) {
+            showToast('请先填写 Token、用户名和仓库名', 'error');
+            return;
+        }
+
+        showToast('正在测试连接...', '');
+
+        try {
+            const response = await fetch(
+                `https://api.github.com/repos/${owner}/${repo}`,
+                {
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                }
+            );
+
+            if (response.ok) {
+                const repoData = await response.json();
+                showToast(`连接成功! 仓库: ${repoData.full_name}`, 'success');
+            } else if (response.status === 404) {
+                showToast('仓库不存在，请检查用户名和仓库名', 'error');
+            } else if (response.status === 401) {
+                showToast('Token 无效或已过期', 'error');
+            } else if (response.status === 403) {
+                showToast('Token 权限不足，请确保有 repo 权限', 'error');
+            } else {
+                showToast(`连接失败 (${response.status})`, 'error');
+            }
+        } catch (e) {
+            showToast(`网络错误: ${e.message}`, 'error');
+        }
     }
 
     // Google OAuth
