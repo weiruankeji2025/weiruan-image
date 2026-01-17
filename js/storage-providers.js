@@ -51,7 +51,14 @@ class StorageProvider {
     }
 
     // 生成链接
-    generateLinks(url, fileName) {
+    generateLinks(url, fileName, fileType = 'image') {
+        if (fileType === 'video') {
+            return {
+                markdown: `[${fileName}](${url})`,
+                html: `<video src="${url}" controls></video>`,
+                direct: url
+            };
+        }
         return {
             markdown: `![${fileName}](${url})`,
             html: `<img src="${url}" alt="${fileName}">`,
@@ -281,11 +288,15 @@ class GitHubProvider extends StorageProvider {
         const cdnUrl = `https://cdn.jsdelivr.net/gh/${config.owner}/${config.repo}@${config.branch || 'main'}/${filePath}`;
         const rawUrl = `https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch || 'main'}/${filePath}`;
 
+        // 判断文件类型
+        const fileType = file.type.startsWith('video/') ? 'video' : 'image';
+
         return {
-            ...this.generateLinks(cdnUrl, fileName),
+            ...this.generateLinks(cdnUrl, fileName, fileType),
             cdn: cdnUrl,
             direct: rawUrl,
             fileName,
+            fileType,
             storage: 'GitHub'
         };
     }
@@ -441,10 +452,14 @@ class GoogleDriveProvider extends StorageProvider {
         // 生成直接访问链接
         const directUrl = `https://drive.google.com/uc?export=view&id=${result.id}`;
 
+        // 判断文件类型
+        const fileType = file.type.startsWith('video/') ? 'video' : 'image';
+
         return {
-            ...this.generateLinks(directUrl, fileName),
+            ...this.generateLinks(directUrl, fileName, fileType),
             direct: directUrl,
             fileName,
+            fileType,
             storage: 'Google Drive'
         };
     }
@@ -578,10 +593,14 @@ class OneDriveProvider extends StorageProvider {
 
         onProgress?.(80, '生成链接...');
 
+        // 判断文件类型
+        const fileType = file.type.startsWith('video/') ? 'video' : 'image';
+
         return {
-            ...this.generateLinks(directUrl, fileName),
+            ...this.generateLinks(directUrl, fileName, fileType),
             direct: directUrl,
             fileName,
+            fileType,
             storage: 'OneDrive'
         };
     }
@@ -744,10 +763,14 @@ class DropboxProvider extends StorageProvider {
 
         onProgress?.(80, '生成链接...');
 
+        // 判断文件类型
+        const fileType = file.type.startsWith('video/') ? 'video' : 'image';
+
         return {
-            ...this.generateLinks(directUrl, fileName),
+            ...this.generateLinks(directUrl, fileName, fileType),
             direct: directUrl,
             fileName,
+            fileType,
             storage: 'Dropbox'
         };
     }

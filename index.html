@@ -101,9 +101,10 @@
         <section class="upload-section">
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">📤</div>
-                <p class="upload-text">拖拽图片到这里，或点击选择文件</p>
-                <p class="upload-hint">支持 Ctrl+V 粘贴图片 | 支持 JPG, PNG, GIF, WebP</p>
-                <input type="file" id="fileInput" accept="image/*" multiple hidden>
+                <p class="upload-text">拖拽图片或视频到这里，或点击选择文件</p>
+                <p class="upload-hint">支持 Ctrl+V 粘贴 | 图片: JPG, PNG, GIF, WebP | 视频: MP4, WebM, MOV</p>
+                <p class="upload-limit">单文件最大 4GB</p>
+                <input type="file" id="fileInput" accept="image/*,video/*" multiple hidden>
             </div>
             <div class="upload-progress" id="uploadProgress" style="display: none;">
                 <div class="progress-bar">
@@ -144,8 +145,9 @@
                     <button class="btn btn-copy" onclick="copyLink('cdnLink')">复制</button>
                 </div>
             </div>
-            <div class="preview-area">
-                <img id="previewImage" src="" alt="预览">
+            <div class="preview-area" id="previewArea">
+                <img id="previewImage" src="" alt="预览" style="display: none;">
+                <video id="previewVideo" controls style="display: none;"></video>
             </div>
         </section>
 

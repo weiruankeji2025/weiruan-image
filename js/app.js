@@ -108,13 +108,48 @@ function initUploadEvents() {
     document.addEventListener('paste', (e) => {
         const items = e.clipboardData.items;
         for (let item of items) {
-            if (item.type.startsWith('image/')) {
+            if (item.type.startsWith('image/') || item.type.startsWith('video/')) {
                 const file = item.getAsFile();
                 handleFiles([file]);
                 break;
             }
         }
     });
+}
+
+// 文件大小限制: 4GB
+const MAX_FILE_SIZE = 4 * 1024 * 1024 * 1024; // 4GB in bytes
+
+// 支持的文件类型
+const SUPPORTED_TYPES = {
+    image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp'],
+    video: ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska']
+};
+
+/**
+ * 检查文件类型是否支持
+ */
+function isFileTypeSupported(file) {
+    return file.type.startsWith('image/') || file.type.startsWith('video/');
+}
+
+/**
+ * 获取文件类型（图片或视频）
+ */
+function getFileCategory(file) {
+    if (file.type.startsWith('image/')) return 'image';
+    if (file.type.startsWith('video/')) return 'video';
+    return 'unknown';
+}
+
+/**
+ * 格式化文件大小
+ */
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
 }
 
 /**
@@ -130,8 +165,15 @@ async function handleFiles(files) {
     }
 
     for (let file of files) {
-        if (!file.type.startsWith('image/')) {
-            showToast('只支持图片文件', 'error');
+        // 检查文件类型
+        if (!isFileTypeSupported(file)) {
+            showToast('不支持的文件类型，请上传图片或视频', 'error');
+            continue;
+        }
+
+        // 检查文件大小
+        if (file.size > MAX_FILE_SIZE) {
+            showToast(`文件过大 (${formatFileSize(file.size)})，最大支持 4GB`, 'error');
             continue;
         }
 
@@ -203,10 +245,27 @@ function showResult(result) {
     if (result.cdn) {
         cdnLinkItem.style.display = 'block';
         document.getElementById('cdnLink').value = result.cdn;
-        document.getElementById('previewImage').src = result.cdn;
     } else {
         cdnLinkItem.style.display = 'none';
-        document.getElementById('previewImage').src = result.direct;
+    }
+
+    // 预览区域
+    const previewImage = document.getElementById('previewImage');
+    const previewVideo = document.getElementById('previewVideo');
+    const previewUrl = result.cdn || result.direct;
+
+    // 判断是视频还是图片
+    const isVideo = result.fileType === 'video' ||
+                    /\.(mp4|webm|mov|avi|mkv)$/i.test(result.fileName);
+
+    if (isVideo) {
+        previewImage.style.display = 'none';
+        previewVideo.style.display = 'block';
+        previewVideo.src = previewUrl;
+    } else {
+        previewVideo.style.display = 'none';
+        previewImage.style.display = 'block';
+        previewImage.src = previewUrl;
     }
 
     // 滚动到结果区域
@@ -284,14 +343,25 @@ function renderHistory(history) {
 
     historyList.innerHTML = history.map((item, index) => {
         const previewUrl = item.links.cdn || item.links.direct;
+        const isVideo = item.links.fileType === 'video' ||
+                        /\.(mp4|webm|mov|avi|mkv)$/i.test(item.name);
+
+        // 视频显示视频图标，图片显示缩略图
+        const thumbnailHtml = isVideo
+            ? `<div class="history-video-icon">🎬</div>`
+            : `<img src="${previewUrl}" alt="${item.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖼️</text></svg>'">`;
+
+        const fileTypeLabel = isVideo ? '视频' : '图片';
+
         return `
             <div class="history-item">
-                <img src="${previewUrl}" alt="${item.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖼️</text></svg>'">
+                ${thumbnailHtml}
                 <div class="history-info">
                     <div class="history-name">${item.name}</div>
                     <div class="history-meta">
                         <span class="history-time">${item.time}</span>
                         <span class="history-storage">${item.storage || 'GitHub'}</span>
+                        <span class="history-type">${fileTypeLabel}</span>
                     </div>
                 </div>
                 <div class="history-actions">
