@@ -117,8 +117,36 @@ function initUploadEvents() {
     });
 }
 
-// 文件大小限制: 4GB
-const MAX_FILE_SIZE = 4 * 1024 * 1024 * 1024; // 4GB in bytes
+// 各存储服务的文件大小限制
+const FILE_SIZE_LIMITS = {
+    github: 25 * 1024 * 1024,        // 25MB (GitHub API 限制，base64 编码会增大)
+    googledrive: 100 * 1024 * 1024,  // 100MB
+    onedrive: 100 * 1024 * 1024,     // 100MB
+    dropbox: 150 * 1024 * 1024       // 150MB
+};
+
+// 获取当前存储服务的文件大小限制
+function getMaxFileSize() {
+    const currentProvider = storageManager?.currentProvider || 'github';
+    return FILE_SIZE_LIMITS[currentProvider] || FILE_SIZE_LIMITS.github;
+}
+
+// 更新上传限制显示
+function updateUploadLimitDisplay() {
+    const limitEl = document.getElementById('uploadLimit');
+    if (!limitEl) return;
+
+    const currentProvider = storageManager?.currentProvider || 'github';
+    const maxSize = FILE_SIZE_LIMITS[currentProvider] || FILE_SIZE_LIMITS.github;
+    const providerNames = {
+        github: 'GitHub',
+        googledrive: 'Google Drive',
+        onedrive: 'OneDrive',
+        dropbox: 'Dropbox'
+    };
+
+    limitEl.textContent = `单文件最大 ${formatFileSize(maxSize)} (${providerNames[currentProvider]})`;
+}
 
 // 支持的文件类型
 const SUPPORTED_TYPES = {
@@ -172,8 +200,10 @@ async function handleFiles(files) {
         }
 
         // 检查文件大小
-        if (file.size > MAX_FILE_SIZE) {
-            showToast(`文件过大 (${formatFileSize(file.size)})，最大支持 4GB`, 'error');
+        const maxSize = getMaxFileSize();
+        if (file.size > maxSize) {
+            const providerName = storageManager.getCurrentProvider().displayName;
+            showToast(`文件过大 (${formatFileSize(file.size)})，${providerName} 最大支持 ${formatFileSize(maxSize)}`, 'error');
             continue;
         }
 

@@ -827,6 +827,10 @@ class StorageManager {
                 statusEl.querySelector('.status-text').textContent = isConnected ? '已连接' : '未连接';
             }
         }
+        // 更新上传限制显示
+        if (typeof updateUploadLimitDisplay === 'function') {
+            updateUploadLimitDisplay();
+        }
     }
 
     // 断开连接
