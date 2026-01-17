@@ -252,11 +252,14 @@ function showResult(result) {
     // 预览区域
     const previewImage = document.getElementById('previewImage');
     const previewVideo = document.getElementById('previewVideo');
-    const previewUrl = result.cdn || result.direct;
 
     // 判断是视频还是图片
     const isVideo = result.fileType === 'video' ||
                     /\.(mp4|webm|mov|avi|mkv)$/i.test(result.fileName);
+
+    // 视频使用直接链接（CDN 有 50MB 限制且可能有格式兼容问题）
+    // 图片优先使用 CDN 加速
+    const previewUrl = isVideo ? result.direct : (result.cdn || result.direct);
 
     if (isVideo) {
         previewImage.style.display = 'none';
